@@ -16,6 +16,9 @@ jobs:
           git clone --depth 1 https://github.com/theos/sdks.git "$HOME/theos-sdks"
           cp -R "$HOME/theos-sdks/"*.sdk "$HOME/theos/sdks/"
 
+      - name: install ldid
+        run: brew install ldid
+
       - name: build deb (rootless, for palera1n)
         run: |
           export THEOS="$HOME/theos"
