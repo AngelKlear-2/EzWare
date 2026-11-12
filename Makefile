@@ -13,7 +13,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = EzWare
 
 EzWare_FILES = Tweak.m
-EzWare_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-function
+EzWare_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-function -Wno-arc-retain-cycles -Wno-error
 EzWare_FRAMEWORKS = UIKit QuartzCore Foundation
 EzWare_LIBRARIES = substrate
 
