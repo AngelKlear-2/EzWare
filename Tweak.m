@@ -204,6 +204,7 @@ static const void *kEzBlockKey = &kEzBlockKey;
 @interface EzRoot : UIView
 @property (nonatomic, strong) UIView *panel;
 @property (nonatomic, strong) UIView *triggerArea;
+@property (nonatomic, assign) CGPoint panelOff;   // user drag offset of the menu, from its default spot
 @property (nonatomic, strong) UILabel *status;
 @property (nonatomic) BOOL menuOpen;
 @end
@@ -305,7 +306,28 @@ static void DrawESP(void) {
     self.panel.alpha = 0;
     [self addSubview:self.panel];
     [self buildMenuInto:self.panel];
+
+    // grip strip on top of the menu: drag here to move the whole panel
+    UIView *grip = [[UIView alloc] init];
+    grip.tag = 78;
+    grip.backgroundColor = UIColor.clearColor;
+    UIView *gripPill = [[UIView alloc] init];
+    gripPill.tag = 79;
+    gripPill.backgroundColor = [UIColor colorWithWhite:1 alpha:0.35];
+    gripPill.layer.cornerRadius = 2;
+    [grip addSubview:gripPill];
+    [grip addGestureRecognizer:[[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panDrag:)]];
+    [self.panel addSubview:grip];
     return self;
+}
+
+- (void)panDrag:(UIPanGestureRecognizer *)g {
+    CGPoint t = [g translationInView:self];
+    [g setTranslation:CGPointZero inView:self];
+    CGFloat W = self.bounds.size.width, H = self.bounds.size.height;
+    CGFloat x = self.panelOff.x + t.x, y = self.panelOff.y + t.y;
+    self.panelOff = CGPointMake(MAX(-W / 2, MIN(W / 2, x)), MAX(-H, MIN(40, y)));
+    [self setNeedsLayout];
 }
 
 - (UIView *)hitTest:(CGPoint)p withEvent:(UIEvent *)e {
@@ -317,12 +339,18 @@ static void DrawESP(void) {
     [super layoutSubviews];
     CGFloat W = self.bounds.size.width, H = self.bounds.size.height;
     CGFloat safeBottom = self.safeAreaInsets.bottom;
-    self.triggerArea.frame = CGRectMake((W - 180) / 2, H - MAX(safeBottom, 14) - 36, 180, 36);
+    // bar: 150 wide, sits 6pt above the bottom edge (or the safe area)
+    self.triggerArea.frame = CGRectMake((W - 200) / 2, H - MAX(safeBottom, 4) - 28, 200, 28);
     UIView *pill = [self.triggerArea viewWithTag:77];
-    pill.frame = CGRectMake(90 - 60, 36 - 10, 120, 5);
+    pill.frame = CGRectMake(25, 28 - 6 - 5, 150, 5);
 
     CGFloat pw = MIN(W - 32, 380), ph = MIN(H * 0.74, 600);
-    self.panel.frame = CGRectMake((W - pw) / 2, H - MAX(safeBottom, 14) - 46 - ph, pw, ph);
+    self.panel.bounds = CGRectMake(0, 0, pw, ph);
+    self.panel.center = CGPointMake(W / 2 + self.panelOff.x,
+                                    H - MAX(safeBottom, 14) - 46 - ph / 2 + self.panelOff.y);
+    UIView *grip = [self.panel viewWithTag:78];
+    grip.frame = CGRectMake(0, 0, pw, 30);
+    [grip viewWithTag:79].frame = CGRectMake(pw / 2 - 22, 12, 44, 4);
 }
 
 - (void)toggleMenu {
@@ -563,9 +591,19 @@ static void DrawESP(void) {
 }
 @end
 
+// the window must not swallow touches that land on empty space: otherwise the game gets nothing
+@interface EzWindow : UIWindow
+@end
+@implementation EzWindow
+- (UIView *)hitTest:(CGPoint)p withEvent:(UIEvent *)e {
+    UIView *v = [super hitTest:p withEvent:e];
+    return v == self ? nil : v;
+}
+@end
+
 static void SetupOverlay(void) {
     if (gWin) return;
-    gWin = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+    gWin = [[EzWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     for (UIScene *s in UIApplication.sharedApplication.connectedScenes) {
         if ([s isKindOfClass:[UIWindowScene class]]) { gWin.windowScene = (UIWindowScene *)s; break; }
     }
