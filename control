@@ -1,0 +1,9 @@
+Package: com.angelklear.ezware
+Name: EzWare
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: EzWare ESP and skeleton for StandChillow 2.07 F1
+Maintainer: AngelKlear (con1xx)
+Author: AngelKlear (con1xx)
+Section: Tweaks
+Depends: mobilesubstrate

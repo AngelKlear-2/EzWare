@@ -1,0 +1,39 @@
+name: build-ezware
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install theos and sdks
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$HOME/theos"
+          git clone --depth 1 https://github.com/theos/sdks.git "$HOME/theos-sdks"
+          cp -R "$HOME/theos-sdks/"*.sdk "$HOME/theos/sdks/"
+
+      - name: build deb (rootless, for palera1n)
+        env:
+          THEOS: ${{ env.HOME }}/theos
+        run: |
+          make package FINALPACKAGE=1 ROOTLESS=1
+
+      - name: collect dylib for trollfools
+        run: |
+          mkdir -p out
+          DYLIB=$(find .theos -name 'EzWare.dylib' | head -n 1)
+          test -n "$DYLIB"
+          cp "$DYLIB" out/EzWare.dylib
+          lipo -info out/EzWare.dylib
+          otool -L out/EzWare.dylib
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ezware
+          path: |
+            packages/*.deb
+            out/EzWare.dylib
