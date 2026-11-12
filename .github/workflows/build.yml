@@ -17,9 +17,8 @@ jobs:
           cp -R "$HOME/theos-sdks/"*.sdk "$HOME/theos/sdks/"
 
       - name: build deb (rootless, for palera1n)
-        env:
-          THEOS: ${{ env.HOME }}/theos
         run: |
+          export THEOS="$HOME/theos"
           make package FINALPACKAGE=1 ROOTLESS=1
 
       - name: collect dylib for trollfools
